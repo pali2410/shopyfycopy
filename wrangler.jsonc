@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shopify-winter2026",
+  "compatibility_date": "2026-07-26",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": ".",
+    "exclude": [
+      "node_modules/**",
+      ".git/**",
+      ".github/**",
+      "package-lock.json",
+      "bun.lock",
+      "bun.lockb",
+      "*.log"
+    ]
+  }
+}

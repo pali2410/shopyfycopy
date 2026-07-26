@@ -1,0 +1,27 @@
+event: message
+data: {"send_pixel":["https://googleads.g.doubleclick.net/pagead/viewthroughconversion/974897256/?random=1970826021&fst=1785087601219&cv=10&fmt=3&bg=ffffff&guid=ON&u_w=1280&u_h=800&gtm=45j91e67m1v877474166z89237247647z9862613069za20gzb9237247647zd9237247647&url=https%3A%2F%2Fwww.shopify.com%2Feditions%2Fwinter2026&tiba=Shopify%20Editions%20%7C%20Winter%20'26&auid=917204866.1785087598&uaa=x86&uab=64&uafvl=Chromium%3B149.0.7827.55%7CNot)A%253BBrand%3B24.0.0.0&uamb=0&uam=&uap=Windows&uapv=19.0.0&uaw=0&rcb=13&dma=0&npa=0&gcd=13l3l3l3l1l1&pscdl=noapi&_is_sw=0&tag_exp=115938466~115938468~117215456~117215459~118032361~118897920~118897930~119732171~119896802&_tu=JA&gap.sstd=5"],"options":{}}
+
+event: message
+data: {"fetch":["https://www.google.com/rmkt/collect/974897256/?random=1970826021&fst=1785087601219&cv=10&fmt=8&bg=ffffff&guid=ON&u_w=1280&u_h=800&gtm=45j91e67m1v877474166z89237247647z9862613069za20gzb9237247647zd9237247647&url=https%3A%2F%2Fwww.shopify.com%2Feditions%2Fwinter2026&tiba=Shopify%20Editions%20%7C%20Winter%20'26&auid=917204866.1785087598&uaa=x86&uab=64&uafvl=Chromium%3B149.0.7827.55%7CNot)A%253BBrand%3B24.0.0.0&uamb=0&uam=&uap=Windows&uapv=19.0.0&uaw=0&rcb=13&dma=0&npa=0&gcd=13l3l3l3l1l1&pscdl=noapi&_is_sw=0&tag_exp=115938466~115938468~117215456~117215459~118032361~118897920~118897930~119732171~119896802&_tu=JA&gap.sstd=5&gcp=5"],"options":{}}
+
+event: message
+data: {"send_pixel":["https://ad.doubleclick.net/activity;src=9321158;type=shopi0;cat=shopi0;ord=1686700;gtm=45j91e67m1v877474166z89237247647z9862613069za20gzb9237247647zd9237247647;dc_pre=1;rcb=13;dma=0;npa=0;gcd=13l3l3l3l1l1;uaa=x86;uab=64;uafvl=Chromium%3B149.0.7827.55%7CNot)A%253BBrand%3B24.0.0.0;uamb=0;uam=;uap=Windows;uapv=19.0.0;uaw=0;pscdl=noapi;auiddc=917204866.1785087598;tag_exp=115938466~115938468~117215456~117215459~118032361~118897920~118897930~119732171~119896802;_tu=JA;gap.sstd=5;s3p=1;_is_sw=0;~oref=https%3A%2F%2Fwww.shopify.com%2Feditions%2Fwinter2026?"],"options":{}}
+
+event: message
+data: {"send_pixel":["https://c.bing.com/c.gif?vid=ec7d73ff-1bd7-43a0-ae68-bbd99896d429&Red3=BACID_12021367"]}
+
+event: message
+data: {"send_pixel":["${transport_url}/_/set_cookie?val=3Ek5md4OQbSX6pR7wtBxUS%2BlhUH0sjNwI8pTOkYJwmBw78%2BWLbTAlcsc9byhgn60wsfZSl8EHm5fJz%2BHyOue40gMCP7vaRdzucSYAM0hGCYD%2BmrRZck0RbdHhHqPKI1gBb59JeJ88%2BnzjYpV5EWvM9U1I1%2F9WElIC3LSQKUtS6ECGsbAIYp%2F1LO9T%2BCICPJ%2F6klrd6vuCNdhMOavsY%2FGwZHS4jCGOorgoTOgbvEUcw%3D%3D&path=${encoded_path}"]}
+
+event: message
+data: {"send_pixel":["https://analytics.google.com/g/s/collect?dma=0&npa=0&gcd=13l3l3l3l1l1&gtm=45j91e67m1v877474166z89237247647z9862613069za20gzb9237247647zd9237247647&tag_exp=115938466~115938468~117215456~117215456~117215459~117215459~118032361~118032361~118897920~118897930~119732171~119896802&_is_sw=0&_tu=JA&gap.sstd=5&_gsid=B7X5MKCR35KQHNLrQjyf-SQC_EHw5ZGg"],"options":{}}
+
+event: message
+data: {"send_pixel":["https://www.google.co.in/ads/ga-audiences?v=1&t=sr&slf_rd=1&_r=4&dma=0&npa=0&gcd=13l3l3l3l1l1&tid=G-B7X5MKCR35&cid=zS64o5zThp5kNOufRY8EIqhYQuivaWeMw%2F%2B8RKt54UM%3D.1785087598&gtm=45j91e67m1v877474166z89237247647z9862613069za20gzb9237247647zd9237247647&tag_exp=115938466~115938468~117215456~117215456~117215459~117215459~118032361~118032361~118897920~118897930~119732171~119896802&_is_sw=0&_tu=JA&gap.sstd=5&aip=1&z=1778116456"],"options":{}}
+
+event: message
+data: {"send_pixel":["https://stats.g.doubleclick.net/g/collect?v=2&dma=0&npa=0&gcd=13l3l3l3l1l1&tid=G-B7X5MKCR35&cid=zS64o5zThp5kNOufRY8EIqhYQuivaWeMw%2F%2B8RKt54UM%3D.1785087598&gtm=45j91e67m1v877474166z89237247647z9862613069za20gzb9237247647zd9237247647&tag_exp=115938466~115938468~117215456~117215456~117215459~117215459~118032361~118032361~118897920~118897930~119732171~119896802&_is_sw=0&_tu=JA&gap.sstd=5&aip=1"],"options":{}}
+
+event: message
+data: {"response":{"status_code":200,"body":""}}
+

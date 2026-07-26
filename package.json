@@ -1,0 +1,20 @@
+{
+  "name": "shopify-winter2026",
+  "version": "1.0.0",
+  "description": "Shopify Editions Winter 2026 Interactive Website Replica",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . --listen 3000",
+    "start": "npx serve . --listen 3000",
+    "build": "echo 'Static build ready'"
+  },
+  "keywords": [
+    "shopify",
+    "editions",
+    "winter2026",
+    "threejs",
+    "rive"
+  ],
+  "author": "Paramveer Sinh Zala",
+  "license": "MIT"
+}

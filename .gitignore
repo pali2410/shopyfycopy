@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+.vscode/
+*.log
+*.bak
+patch_*.py
+debug_*.py
+find_*.py
+inject_*.py
+update_*.py
+fix_*.py
+silence_*.py
+restore_*.py
+add_*.py
