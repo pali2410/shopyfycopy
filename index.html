@@ -5,6 +5,26 @@
 <base href="/" />
 <script>
 (function() {
+  // Polyfill URL constructor to support relative paths without breaking
+  var NativeURL = window.URL;
+  function SafeURL(url, base) {
+    try {
+      return new NativeURL(url, base || window.location.origin);
+    } catch(e) {
+      if (typeof url === 'string' && (url.startsWith('/') || url.startsWith('.'))) {
+        return new NativeURL(url, window.location.origin);
+      }
+      return new NativeURL(url, base);
+    }
+  }
+  SafeURL.prototype = NativeURL.prototype;
+  SafeURL.createObjectURL = function() { return NativeURL.createObjectURL.apply(NativeURL, arguments); };
+  SafeURL.revokeObjectURL = function() { return NativeURL.revokeObjectURL.apply(NativeURL, arguments); };
+  window.URL = SafeURL;
+})();
+</script>
+<script>
+(function() {
   // Global Error & Console Handler to suppress React SSR/Hydration Mismatch Errors
   var origConsoleError = console.error;
   var origConsoleWarn = console.warn;
@@ -23,7 +43,7 @@
            str.indexOf('hydrat') !== -1 ||
            str.indexOf('Hydrat') !== -1 ||
            str.indexOf('Text content does not match') !== -1 ||
-           str.indexOf('Expected server HTML') !== -1;
+           str.indexOf('Expected server HTML') !== -1 || str.indexOf('Failed to construct') !== -1 || str.indexOf('Invalid URL') !== -1;
   }
 
   console.error = function() {
@@ -354,7 +374,7 @@ import("./scripts/entry.client-CXIPWjPz.js");</script>
       '</div>';
 
     overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
+    if (document.body) document.body.appendChild(overlay);
 
     document.getElementById('pz-modal-close').addEventListener('click', function(e) {
       e.stopPropagation();
@@ -586,7 +606,7 @@ import("./scripts/entry.client-CXIPWjPz.js");</script>
       boxShadow: '0 20px 60px rgba(0,0,0,0.85)'
     });
 
-    document.body.appendChild(panel);
+    if (document.body) document.body.appendChild(panel);
 
     /* Explicit click event handlers for internal panel buttons */
     document.getElementById('pz-panel-close').addEventListener('click', function(e) {
