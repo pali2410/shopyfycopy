@@ -1,0 +1,12 @@
+.git/
+.github/
+node_modules/
+*.log
+*.bak
+*.py
+package.json
+package-lock.json
+bun.lock
+bun.lockb
+wrangler.jsonc
+serve.json
