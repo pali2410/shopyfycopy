@@ -3,69 +3,60 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // Attempt to fetch asset from Cloudflare static assets
+    // 1. Try to fetch the requested static asset
     let response = await env.ASSETS.fetch(request);
 
-    // If request failed with 404
-    if (response.status === 404) {
-      // 1. If requesting a JS or MJS module file, return valid JS to prevent MIME type text/html error
-      if (pathname.endsWith('.js') || pathname.endsWith('.mjs')) {
-        // Try searching in /scripts/ or /assets/
-        const filename = pathname.substring(pathname.lastIndexOf('/') + 1);
-        const scriptRetry = await env.ASSETS.fetch(new Request(new URL('/scripts/' + filename, request.url), request));
-        if (scriptRetry.status === 200) return scriptRetry;
-
-        const assetRetry = await env.ASSETS.fetch(new Request(new URL('/assets/' + filename, request.url), request));
-        if (assetRetry.status === 200) return assetRetry;
-
-        return new Response('export default {};', {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/javascript; charset=utf-8',
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
-          }
-        });
+    // If static asset exists (200, 304, etc.)
+    if (response.status < 400) {
+      const isHtml = pathname === '/' || pathname.endsWith('.html') || pathname.includes('/editions/') || (response.headers.get('content-type') || '').includes('text/html');
+      if (isHtml) {
+        const freshHeaders = new Headers(response.headers);
+        freshHeaders.set('Content-Type', 'text/html; charset=utf-8');
+        freshHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        return new Response(response.body, { status: response.status, headers: freshHeaders });
       }
+      return response;
+    }
 
-      // 2. CSS files fallback
-      if (pathname.endsWith('.css')) {
-        return new Response('', {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/css; charset=utf-8',
-            'Cache-Control': 'no-cache'
-          }
-        });
-      }
+    // 2. If missing JS module, try fetching from /scripts/ or return empty JS module (200 OK)
+    if (pathname.endsWith('.js') || pathname.endsWith('.mjs')) {
+      const filename = pathname.substring(pathname.lastIndexOf('/') + 1);
+      const scriptUrl = new URL('/scripts/' + filename, url.origin);
+      const scriptResp = await env.ASSETS.fetch(new Request(scriptUrl));
+      if (scriptResp.status < 400) return scriptResp;
 
-      // 3. SPA Fallback for HTML page routes: return index.html with no-cache headers
-      const htmlResp = await env.ASSETS.fetch(new Request(new URL('/index.html', request.url), request));
-      const htmlHeaders = new Headers(htmlResp.headers);
-      htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
-      htmlHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      htmlHeaders.set('Pragma', 'no-cache');
-      htmlHeaders.set('Expires', '0');
-
-      return new Response(htmlResp.body, {
+      return new Response('export default {};', {
         status: 200,
-        headers: htmlHeaders
+        headers: {
+          'Content-Type': 'application/javascript; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
       });
     }
 
-    // Force no-cache headers on HTML responses so mobile devices always get the newest version
-    const isHtml = pathname === '/' || pathname.endsWith('.html') || pathname.includes('/editions/') || (response.headers.get('content-type') || '').includes('text/html');
-    if (isHtml) {
-      const freshHeaders = new Headers(response.headers);
-      freshHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      freshHeaders.set('Pragma', 'no-cache');
-      freshHeaders.set('Expires', '0');
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: freshHeaders
+    // 3. If missing CSS, return empty CSS with 200 OK
+    if (pathname.endsWith('.css')) {
+      return new Response('', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/css; charset=utf-8',
+          'Cache-Control': 'no-cache'
+        }
       });
     }
 
-    return response;
+    // 4. SPA Fallback for HTML Page Routes (/editions/winter2026, etc.): Fetch /index.html and return STATUS 200 OK!
+    const indexUrl = new URL('/index.html', url.origin);
+    const indexResp = await env.ASSETS.fetch(new Request(indexUrl));
+    const htmlHeaders = new Headers(indexResp.headers);
+    htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
+    htmlHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    htmlHeaders.set('Pragma', 'no-cache');
+    htmlHeaders.set('Expires', '0');
+
+    return new Response(indexResp.body, {
+      status: 200,
+      headers: htmlHeaders
+    });
   }
 };
