@@ -1,10 +1,36 @@
 {
   "rewrites": [
-    { "source": "/editions/scripts/:path*", "destination": "/scripts/:path*" },
-    { "source": "/editions/styles/:path*", "destination": "/styles/:path*" },
-    { "source": "/editions/raw_site/:path*", "destination": "/raw_site/:path*" },
-    { "source": "/editions/3d_models/:path*", "destination": "/3d_models/:path*" },
-    { "source": "/editions/**", "destination": "/index.html" },
-    { "source": "/**", "destination": "/index.html" }
+    {
+      "source": "/editions/scripts/:path*",
+      "destination": "/scripts/:path*"
+    },
+    {
+      "source": "/editions/assets/:path*",
+      "destination": "/scripts/:path*"
+    },
+    {
+      "source": "/editions/styles/:path*",
+      "destination": "/styles/:path*"
+    },
+    {
+      "source": "/editions/raw_site/:path*",
+      "destination": "/raw_site/:path*"
+    },
+    {
+      "source": "/editions/3d_models/:path*",
+      "destination": "/3d_models/:path*"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/scripts/:path*"
+    },
+    {
+      "source": "/editions/**",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/**",
+      "destination": "/index.html"
+    }
   ]
 }
