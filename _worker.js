@@ -4,34 +4,35 @@ export default {
     const pathname = url.pathname;
     const decodedPath = decodeURIComponent(pathname);
 
-    // 1. Identify static asset requests (.js, .css, .wasm, .woff2, .json, .png, etc.)
+    // 1. Check if request is for a static asset (.js, .css, .wasm, .woff2, .json, .png, etc.)
     const isAsset = /\.(js|css|wasm|woff2|woff|ttf|otf|json|png|jpg|jpeg|gif|svg|hdr|glb|gltf|mp3|ico)$/i.test(decodedPath);
 
     if (isAsset) {
       const filename = decodedPath.substring(decodedPath.lastIndexOf('/') + 1);
       const safeFilename = filename.replace('(_locale).editions.winter2026', 'locale-editions-winter2026');
 
-      // Candidate paths relative to root asset directory
+      // Candidate paths relative to asset directory
       const candidatePaths = [
-        pathname,
-        decodedPath,
-        '/' + filename,
         '/scripts/' + filename,
+        '/' + filename,
         '/styles/' + filename,
         '/images/' + filename,
         '/media/' + filename,
+        '/3d_models/' + filename,
+        '/scripts/' + safeFilename,
         '/' + safeFilename,
-        '/scripts/' + safeFilename
+        pathname
       ];
 
       for (const cp of candidatePaths) {
         try {
-          // Pass URL object with origin + candidate path directly to env.ASSETS.fetch
-          const targetUrl = new URL(cp, url.origin);
-          const response = await env.ASSETS.fetch(targetUrl);
+          const assetReq = new Request(url.origin + cp);
+          const response = await env.ASSETS.fetch(assetReq);
           
-          if (response.status < 400) {
+          if (response && response.status === 200) {
             const contentType = response.headers.get('Content-Type') || '';
+            
+            // Skip if Cloudflare returned HTML fallback for a script or style file
             if (contentType.includes('text/html') && !filename.endsWith('.html')) {
               continue;
             }
@@ -53,7 +54,7 @@ export default {
         } catch (e) {}
       }
 
-      // Safe JS fallback if chunk is dynamic or optional
+      // Fallback for JS and CSS assets to prevent MIME type errors in browser
       if (filename.endsWith('.js')) {
         return new Response('/* Fallback script */\nexport default {};', {
           status: 200,
@@ -72,7 +73,8 @@ export default {
 
     // 2. Page route requests (/editions/winter2026, /, /editions/...) -> serve /index.html with status 200
     try {
-      const indexResp = await env.ASSETS.fetch(new URL('/index.html', url.origin));
+      const indexReq = new Request(url.origin + '/index.html');
+      const indexResp = await env.ASSETS.fetch(indexReq);
       const htmlHeaders = new Headers(indexResp.headers);
       htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
       htmlHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
