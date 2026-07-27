@@ -4,7 +4,7 @@ export default {
     const pathname = url.pathname;
     const decodedPath = decodeURIComponent(pathname);
 
-    // 1. Identify static asset extensions
+    // 1. Identify static asset requests (.js, .css, .wasm, .woff2, .json, .png, etc.)
     const isAsset = /\.(js|css|wasm|woff2|woff|ttf|otf|json|png|jpg|jpeg|gif|svg|hdr|glb|gltf|mp3|ico)$/i.test(decodedPath);
 
     if (isAsset) {
@@ -12,34 +12,32 @@ export default {
       const filename = decodedPath.substring(decodedPath.lastIndexOf('/') + 1);
       const safeFilename = filename.replace('(_locale).editions.winter2026', 'locale-editions-winter2026');
 
-      // Build candidate paths in order of preference
-      const candidatePaths = [
-        pathname, // original exact path
-        '/' + filename, // root level
-        '/scripts/' + filename, // scripts folder
-        '/styles/' + filename, // styles folder
-        '/images/' + filename, // images folder
-        '/media/' + filename, // media folder
-        '/3d_models/' + filename, // 3d_models folder
-        '/' + safeFilename,
-        '/scripts/' + safeFilename
+      // Candidate URL strings (MUST be clean URL strings without passing original request object)
+      const candidateUrls = [
+        url.origin + pathname,
+        url.origin + '/' + filename,
+        url.origin + '/scripts/' + filename,
+        url.origin + '/styles/' + filename,
+        url.origin + '/images/' + filename,
+        url.origin + '/media/' + filename,
+        url.origin + '/3d_models/' + filename,
+        url.origin + '/' + safeFilename,
+        url.origin + '/scripts/' + safeFilename
       ];
 
-      for (const p of candidatePaths) {
+      for (const targetUrl of candidateUrls) {
         try {
-          const assetReq = new Request(new URL(p, url.origin), request);
-          const response = await env.ASSETS.fetch(assetReq);
+          // Construct clean Request with targetUrl string
+          const response = await env.ASSETS.fetch(new Request(targetUrl));
           
-          // Verify response is a valid asset (not index.html fallback)
           if (response.status < 400) {
             const contentType = response.headers.get('Content-Type') || '';
             
-            // If Cloudflare returned text/html for a .js or .css file, skip it
+            // Skip if Cloudflare returned HTML for script/style request
             if (contentType.includes('text/html') && !filename.endsWith('.html')) {
               continue;
             }
 
-            // Ensure correct Content-Type for JS and CSS files
             const headers = new Headers(response.headers);
             if (filename.endsWith('.js')) {
               headers.set('Content-Type', 'application/javascript; charset=utf-8');
@@ -57,15 +55,15 @@ export default {
         } catch (e) {}
       }
 
-      // Safe emergency fallback for missing JS / CSS to avoid breaking page load or throwing MIME errors
+      // Safe fallbacks to prevent MIME type or script load errors
       if (filename.endsWith('.js')) {
-        return new Response('/* Empty fallback script */\nexport default {};', {
+        return new Response('/* Fallback script */\nexport default {};', {
           status: 200,
           headers: { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
         });
       }
       if (filename.endsWith('.css')) {
-        return new Response('/* Empty fallback css */', {
+        return new Response('/* Fallback css */', {
           status: 200,
           headers: { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' }
         });
@@ -76,8 +74,7 @@ export default {
 
     // 2. Page route requests (/editions/winter2026, /, /editions/...) -> serve /index.html with status 200
     try {
-      const indexReq = new Request(new URL('/index.html', url.origin), request);
-      const indexResp = await env.ASSETS.fetch(indexReq);
+      const indexResp = await env.ASSETS.fetch(new Request(url.origin + '/index.html'));
       const htmlHeaders = new Headers(indexResp.headers);
       htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
       htmlHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
