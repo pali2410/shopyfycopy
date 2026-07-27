@@ -4,14 +4,14 @@ export default {
     const pathname = url.pathname;
     const decodedPath = decodeURIComponent(pathname);
 
-    // 1. Check if request is for a static asset (.js, .css, .wasm, .woff2, .json, .png, etc.)
+    // 1. Identify static asset requests (.js, .css, .wasm, .woff2, .json, .png, etc.)
     const isAsset = /\.(js|css|wasm|woff2|woff|ttf|otf|json|png|jpg|jpeg|gif|svg|hdr|glb|gltf|mp3|ico)$/i.test(decodedPath);
 
     if (isAsset) {
       const filename = decodedPath.substring(decodedPath.lastIndexOf('/') + 1);
       const safeFilename = filename.replace('(_locale).editions.winter2026', 'locale-editions-winter2026');
 
-      // Candidate paths relative to asset directory
+      // Candidate relative path URLs to query from env.ASSETS
       const candidatePaths = [
         '/scripts/' + filename,
         '/' + filename,
@@ -20,19 +20,22 @@ export default {
         '/media/' + filename,
         '/3d_models/' + filename,
         '/scripts/' + safeFilename,
-        '/' + safeFilename,
-        pathname
+        '/' + safeFilename
       ];
 
       for (const cp of candidatePaths) {
         try {
-          const assetReq = new Request(url.origin + cp);
+          // Construct Request on origin
+          const assetReq = new Request(url.origin + cp, {
+            method: 'GET',
+            headers: request.headers
+          });
           const response = await env.ASSETS.fetch(assetReq);
           
           if (response && response.status === 200) {
             const contentType = response.headers.get('Content-Type') || '';
             
-            // Skip if Cloudflare returned HTML fallback for a script or style file
+            // Skip if Cloudflare returned HTML fallback
             if (contentType.includes('text/html') && !filename.endsWith('.html')) {
               continue;
             }
@@ -73,7 +76,10 @@ export default {
 
     // 2. Page route requests (/editions/winter2026, /, /editions/...) -> serve /index.html with status 200
     try {
-      const indexReq = new Request(url.origin + '/index.html');
+      const indexReq = new Request(url.origin + '/index.html', {
+        method: 'GET',
+        headers: request.headers
+      });
       const indexResp = await env.ASSETS.fetch(indexReq);
       const htmlHeaders = new Headers(indexResp.headers);
       htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
