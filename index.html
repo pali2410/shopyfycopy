@@ -215,167 +215,141 @@
 }
 </style>
 
-<script>
-(function() {
-  /* MOBILE RESCUE: Force page content visible if canvas hangs */
-  var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                 (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
-  
-  if (!isMobile) return;
-  
-  /* Override devicePixelRatio to 1 on mobile to reduce GPU load */
-  try {
-    Object.defineProperty(window, 'devicePixelRatio', {
-      get: function() { return 1; },
-      configurable: true
-    });
-  } catch(e) {}
-  
-  /* Suppress Rive animation errors that cause React to hang */
-  var origConsoleWarn = console.warn;
-  console.warn = function() {
-    var msg = arguments[0] ? String(arguments[0]) : '';
-    if (msg.indexOf('Animation with name') !== -1 && msg.indexOf('not found') !== -1) {
-      return; /* Suppress Rive animation not found warnings */
-    }
-    origConsoleWarn.apply(console, arguments);
-  };
-  
-  /* WebGL context failure handler: disable WebGL on mobile fallback */
-  var origGetContext = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = function(type, opts) {
-    if ((type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') && isMobile) {
-      /* Return null to trigger FallbackImageScene gracefully */
-      var ctx = origGetContext.call(this, type, opts);
-      return ctx; /* Try native first, don't force null */
-    }
-    return origGetContext.call(this, type, opts);
-  };
-  
-  /* MAIN RESCUE: After 5 seconds, force all hidden content elements to be visible */
-  function forceShowContent() {
-    /* Show all main content sections */
-    var allSections = document.querySelectorAll('main, section, article, [data-component], [class*="section"]');
-    allSections.forEach(function(el) {
-      var cs = window.getComputedStyle(el);
-      if (cs.visibility === 'hidden' || cs.opacity === '0' || cs.display === 'none') {
-        el.style.visibility = 'visible';
-        el.style.opacity = '1';
-        el.style.display = '';
-      }
-    });
-    
-    /* Force body to be visible */
-    document.body.style.visibility = 'visible';
-    document.body.style.opacity = '1';
-    
-    /* Hide any loading overlays */
-    var loadingEls = document.querySelectorAll('[class*="loading"], [class*="loader"], [class*="spinner"], [id*="loading"]');
-    loadingEls.forEach(function(el) {
-      el.style.display = 'none';
-    });
-    
-    /* Make canvas sections fade to black (not block content) */
-    var canvases = document.querySelectorAll('canvas[aria-hidden="true"], canvas[data-rollout-canvas]');
-    canvases.forEach(function(c) {
-      c.style.opacity = '0';
-      c.style.pointerEvents = 'none';
-    });
-  }
-  
-  /* Run rescue after delays */
-  setTimeout(forceShowContent, 3000);
-  setTimeout(forceShowContent, 5000);
-  setTimeout(forceShowContent, 8000);
-  
-  /* Also run when page becomes fully loaded */
-  window.addEventListener('load', function() {
-    setTimeout(forceShowContent, 2000);
-  });
-  
-})();
-</script>
+
+
+
 <script>
 /* ============================================================
-   MOBILE RIVE INFINITE LOOP BREAKER
-   Root cause: State Machine "autoplay" not found in Rive -> 
-   initLinearAnimations fallback -> infinite React render loop
-   Fix: Suppress Rive state machine errors on mobile and 
-   break requestAnimationFrame infinite loops after timeout
+   NUCLEAR MOBILE FIX v3
+   The React scheduler uses MessageChannel postMessage to loop infinitely.
+   rAF throttle alone is not enough. We must:
+   1. Throttle MessageChannel postMessage (React scheduler)
+   2. Force content visible via injected CSS style (immune to React re-renders)
+   3. Disable Rive animations on mobile entirely
    ============================================================ */
 (function() {
   var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                 (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
-  
+                 (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+
   if (!isMobile) return;
+  
+  console.log('[Mobile Fix v3] Applying nuclear mobile fixes...');
 
-  /* 1. Suppress Rive console warnings so they don't trigger React error boundaries */
-  var _origWarn = console.warn;
+  /* ---- 1. Suppress Rive errors ---- */
+  var _w = console.warn, _e = console.error;
   console.warn = function() {
-    var msg = arguments[0] ? String(arguments[0]) : '';
-    if (msg.indexOf('State Machine with name') !== -1 ||
-        msg.indexOf('Animation with name') !== -1 ||
-        msg.indexOf('not found') !== -1) {
-      return; /* Swallow Rive animation/state-machine-not-found errors */
-    }
-    _origWarn.apply(console, arguments);
+    var m = String(arguments[0] || '');
+    if (m.indexOf('State Machine') !== -1 || m.indexOf('Animation with name') !== -1) return;
+    _w.apply(console, arguments);
   };
 
-  /* 2. Throttle requestAnimationFrame to break infinite loops on mobile.
-        If rAF is called >60 times/sec for >3 continuous seconds, start skipping frames. */
-  var _origRAF = window.requestAnimationFrame;
-  var rafCount = 0, rafStartTime = Date.now(), rafThrottleActive = false;
-  window.requestAnimationFrame = function(cb) {
-    rafCount++;
-    var now = Date.now();
-    if (now - rafStartTime > 1000) {
-      if (rafCount > 120 && !rafThrottleActive) {
-        rafThrottleActive = true;
-        console.log('[Mobile Fix] Infinite rAF loop detected - throttling. Count:', rafCount);
-      }
-      rafCount = 0;
-      rafStartTime = now;
-      if (rafThrottleActive) { rafThrottleActive = false; } /* Reset after 1 second */
-    }
-    if (rafThrottleActive) {
-      /* Skip this frame to break the loop, schedule via setTimeout instead */
-      return setTimeout(function() { cb(performance.now()); }, 50);
-    }
-    return _origRAF.call(window, cb);
-  };
-
-  /* 3. Force page content visible after timeouts (safety net) */
-  function forceShowContent() {
-    document.body && (document.body.style.opacity = '1');
-    document.body && (document.body.style.visibility = 'visible');
-    /* Remove any stuck loading screens */
-    ['[class*="loading"]', '[id*="loading"]', '[class*="loader"]'].forEach(function(sel) {
-      try {
-        document.querySelectorAll(sel).forEach(function(el) {
-          if (el.style && !el.closest('button')) el.style.display = 'none';
-        });
-      } catch(e) {}
+  /* ---- 2. Throttle MessageChannel (React 18 scheduler uses this for infinite loop) ---- */
+  var _origMC = window.MessageChannel;
+  var mcCallCount = 0, mcThrottleUntil = 0;
+  window.MessageChannel = function() {
+    var mc = new _origMC();
+    var origPort1Setter = Object.getOwnPropertyDescriptor(mc.port1, 'onmessage');
+    mc.port1.__patchedOnmessage = null;
+    Object.defineProperty(mc.port1, 'onmessage', {
+      set: function(fn) {
+        mc.port1.__patchedOnmessage = function(evt) {
+          mcCallCount++;
+          var now = Date.now();
+          if (mcCallCount > 500 && now < mcThrottleUntil) {
+            /* Too many messages - skip to break loop */
+            setTimeout(function() { if (mc.port1.__patchedOnmessage) mc.port1.__patchedOnmessage(evt); }, 100);
+            return;
+          }
+          if (mcCallCount > 500) {
+            mcThrottleUntil = now + 2000; /* Throttle for 2 seconds */
+            mcCallCount = 0;
+            console.log('[Mobile Fix v3] MessageChannel loop throttled');
+          }
+          fn.call(this, evt);
+        };
+      },
+      get: function() { return mc.port1.__patchedOnmessage; },
+      configurable: true
     });
-    /* Ensure all main content blocks are visible */
-    ['main', 'section', 'article', '[role="main"]'].forEach(function(sel) {
-      try {
-        document.querySelectorAll(sel).forEach(function(el) {
-          var cs = window.getComputedStyle(el);
-          if (parseFloat(cs.opacity) < 0.1) el.style.opacity = '1';
-          if (cs.visibility === 'hidden') el.style.visibility = 'visible';
-        });
-      } catch(e) {}
+    return mc;
+  };
+
+  /* ---- 3. Inject CSS !important overrides - React CANNOT override these ---- */
+  function injectMobileCSS() {
+    var existing = document.getElementById('mobile-force-visible');
+    if (existing) return;
+    var style = document.createElement('style');
+    style.id = 'mobile-force-visible';
+    style.textContent = [
+      /* Force main content visible */
+      '.main-wrapper { opacity: 1 !important; visibility: visible !important; }',
+      'main { opacity: 1 !important; visibility: visible !important; }',
+      /* Force all sections visible */
+      'section { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }',
+      /* Force text and buttons visible */
+      'h1, h2, h3, p, a, button { opacity: 1 !important; visibility: visible !important; }',
+      /* Hide canvases that are blocking content (keep them transparent, not hidden) */
+      'canvas[data-rollout-canvas] { opacity: 0 !important; }',
+      /* Disable transitions that might be stuck mid-animation */
+      '@media (max-width: 900px) {',
+      '  * { transition-duration: 0s !important; animation-duration: 0.001s !important; }',
+      '  canvas[aria-hidden="true"] { display: none !important; }',
+      '}'
+    ].join('
+');
+    if (document.head) {
+      document.head.appendChild(style);
+      console.log('[Mobile Fix v3] CSS force-visible injected');
+    }
+  }
+
+  /* ---- 4. Kill data-initiated=false blocking ---- */
+  function initSections() {
+    var sections = document.querySelectorAll('[data-initiated="false"]');
+    sections.forEach(function(el) {
+      el.setAttribute('data-initiated', 'true');
+      el.setAttribute('data-scrolled', 'true');
+      el.setAttribute('data-sidebar-ready', 'true');
+      el.setAttribute('data-sidebar-loaded', 'true');
+    });
+    
+    /* Trigger IntersectionObserver manually for elements with data-state="idle" */
+    var idleEls = document.querySelectorAll('[data-state="idle"]');
+    idleEls.forEach(function(el) {
+      el.setAttribute('data-state', 'active');
     });
   }
 
-  /* Run the rescue at 3s, 5s, 8s after page starts loading */
-  setTimeout(forceShowContent, 3000);
-  setTimeout(forceShowContent, 5000);
-  setTimeout(forceShowContent, 8000);
+  /* ---- 5. Run all fixes ---- */
+  function runAllFixes() {
+    injectMobileCSS();
+    initSections();
+  }
+
+  /* Inject CSS immediately if head exists */
+  if (document.head) injectMobileCSS();
+  
+  /* Run when DOM is ready */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      runAllFixes();
+      setTimeout(runAllFixes, 500);
+      setTimeout(runAllFixes, 1500);
+      setTimeout(runAllFixes, 3000);
+    });
+  } else {
+    runAllFixes();
+    setTimeout(runAllFixes, 500);
+    setTimeout(runAllFixes, 1500);
+    setTimeout(runAllFixes, 3000);
+  }
+  
   window.addEventListener('load', function() {
-    setTimeout(forceShowContent, 1500);
-    setTimeout(forceShowContent, 3000);
+    runAllFixes();
+    setTimeout(runAllFixes, 1000);
+    setTimeout(runAllFixes, 3000);
   });
+
 })();
 </script>
 
