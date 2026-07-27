@@ -27,6 +27,43 @@
 
 <script>
 (function() {
+  /* GLOBAL RUNTIME EXTERNAL LINK INTERCEPTOR */
+  document.addEventListener('click', function(e) {
+    var target = e.target;
+    while (target && target !== document) {
+      if (target.tagName === 'A') {
+        var id = target.id || '';
+        var href = target.getAttribute('href') || '';
+        var host = target.hostname || '';
+
+        // Do not block our own personal branding links
+        if (id.startsWith('pz-') || href.indexOf('linkedin.com/in/paramveer') !== -1 || href.indexOf('github.com/pali2410') !== -1) {
+          return;
+        }
+
+        // Block external links, shopify links, mailto, etc.
+        if (href.startsWith('http://') || 
+            href.startsWith('https://') || 
+            href.startsWith('mailto:') || 
+            href.startsWith('//') || 
+            host.indexOf('shopify.com') !== -1 || 
+            host.indexOf('shopify') !== -1) {
+          
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('[Link Interceptor] Neutralized click to external URL:', href);
+          return false;
+        }
+      }
+      target = target.parentNode;
+    }
+  }, true); // Use capture phase so it runs before any framework handlers
+})();
+</script>
+
+
+<script>
+(function() {
   /* CLEAN TITLE & SKULL FAVICON LOCK (NON-MUTATING) */
   var DESIRED_TITLE = '💀 Recreated by Paramveer | Shopify Winter 2026';
   document.title = DESIRED_TITLE;
