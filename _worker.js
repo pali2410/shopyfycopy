@@ -3,7 +3,7 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // 1. Try to fetch the requested static asset
+    // 1. Try fetching exact static asset requested
     let response = await env.ASSETS.fetch(request);
 
     // If static asset exists (200, 304, etc.)
@@ -18,13 +18,22 @@ export default {
       return response;
     }
 
-    // 2. If missing JS module, try fetching from /scripts/ or return empty JS module (200 OK)
+    // 2. If missing JS or MJS module file
     if (pathname.endsWith('.js') || pathname.endsWith('.mjs')) {
-      const filename = pathname.substring(pathname.lastIndexOf('/') + 1);
-      const scriptUrl = new URL('/scripts/' + filename, url.origin);
-      const scriptResp = await env.ASSETS.fetch(new Request(scriptUrl));
+      const rawFilename = pathname.substring(pathname.lastIndexOf('/') + 1);
+      const decodedFilename = decodeURIComponent(rawFilename);
+
+      // Try /scripts/
+      const scriptUrl = new URL('/scripts/' + decodedFilename, url.origin);
+      let scriptResp = await env.ASSETS.fetch(new Request(scriptUrl));
       if (scriptResp.status < 400) return scriptResp;
 
+      // Try raw_site cdn assets path
+      const cdnUrl = new URL('/raw_site/cdn.shopify.com/oxygen-v2/47215/49013/102837/4002246/assets/' + decodedFilename, url.origin);
+      let cdnResp = await env.ASSETS.fetch(new Request(cdnUrl));
+      if (cdnResp.status < 400) return cdnResp;
+
+      // Safe JS module fallback with 200 OK
       return new Response('export default {};', {
         status: 200,
         headers: {
