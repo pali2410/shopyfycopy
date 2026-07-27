@@ -11,7 +11,6 @@ export default {
       const filename = decodedPath.substring(decodedPath.lastIndexOf('/') + 1);
       const safeFilename = filename.replace('(_locale).editions.winter2026', 'locale-editions-winter2026');
 
-      // Candidate relative path URLs to query from env.ASSETS
       const candidatePaths = [
         '/scripts/' + filename,
         '/' + filename,
@@ -20,22 +19,16 @@ export default {
         '/media/' + filename,
         '/3d_models/' + filename,
         '/scripts/' + safeFilename,
-        '/' + safeFilename
+        '/' + safeFilename,
+        pathname
       ];
 
       for (const cp of candidatePaths) {
         try {
-          // Construct Request on origin
-          const assetReq = new Request(url.origin + cp, {
-            method: 'GET',
-            headers: request.headers
-          });
-          const response = await env.ASSETS.fetch(assetReq);
+          const response = await env.ASSETS.fetch(new URL(cp, request.url));
           
           if (response && response.status === 200) {
             const contentType = response.headers.get('Content-Type') || '';
-            
-            // Skip if Cloudflare returned HTML fallback
             if (contentType.includes('text/html') && !filename.endsWith('.html')) {
               continue;
             }
@@ -57,7 +50,6 @@ export default {
         } catch (e) {}
       }
 
-      // Fallback for JS and CSS assets to prevent MIME type errors in browser
       if (filename.endsWith('.js')) {
         return new Response('/* Fallback script */\nexport default {};', {
           status: 200,
@@ -76,19 +68,18 @@ export default {
 
     // 2. Page route requests (/editions/winter2026, /, /editions/...) -> serve /index.html with status 200
     try {
-      const indexReq = new Request(url.origin + '/index.html', {
-        method: 'GET',
-        headers: request.headers
-      });
-      const indexResp = await env.ASSETS.fetch(indexReq);
-      const htmlHeaders = new Headers(indexResp.headers);
-      htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
-      htmlHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      htmlHeaders.set('Pragma', 'no-cache');
-      htmlHeaders.set('Expires', '0');
-      return new Response(indexResp.body, { status: 200, headers: htmlHeaders });
-    } catch (err) {
-      return new Response('Loading...', { status: 200, headers: { 'Content-Type': 'text/html' } });
-    }
+      const indexResp = await env.ASSETS.fetch(new URL('/index.html', request.url));
+      if (indexResp && indexResp.status === 200) {
+        const htmlHeaders = new Headers(indexResp.headers);
+        htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
+        htmlHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        htmlHeaders.set('Pragma', 'no-cache');
+        htmlHeaders.set('Expires', '0');
+        return new Response(indexResp.body, { status: 200, headers: htmlHeaders });
+      }
+    } catch (err) {}
+
+    // Direct fallback response for /index.html if fetch fails
+    return env.ASSETS.fetch(request);
   }
 };
