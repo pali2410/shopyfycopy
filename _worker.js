@@ -19,13 +19,13 @@ export default {
         '/media/' + filename,
         '/3d_models/' + filename,
         '/scripts/' + safeFilename,
-        '/' + safeFilename,
-        pathname
+        '/' + safeFilename
       ];
 
       for (const cp of candidatePaths) {
         try {
-          const response = await env.ASSETS.fetch(new URL(cp, request.url));
+          const assetReq = new Request(url.origin + cp);
+          const response = await env.ASSETS.fetch(assetReq);
           
           if (response && response.status === 200) {
             const contentType = response.headers.get('Content-Type') || '';
@@ -68,7 +68,8 @@ export default {
 
     // 2. Page route requests (/editions/winter2026, /, /editions/...) -> serve /index.html with status 200
     try {
-      const indexResp = await env.ASSETS.fetch(new URL('/index.html', request.url));
+      const indexReq = new Request(url.origin + '/index.html');
+      const indexResp = await env.ASSETS.fetch(indexReq);
       if (indexResp && indexResp.status === 200) {
         const htmlHeaders = new Headers(indexResp.headers);
         htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
@@ -79,7 +80,7 @@ export default {
       }
     } catch (err) {}
 
-    // Direct fallback response for /index.html if fetch fails
-    return env.ASSETS.fetch(request);
+    // Fallback: fetch root index.html cleanly
+    return env.ASSETS.fetch(new Request(url.origin + '/index.html'));
   }
 };
