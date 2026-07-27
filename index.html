@@ -1,4 +1,30 @@
 ﻿<!DOCTYPE html><html lang="en" class=""><head>
+
+<script>
+(function() {
+  /* SAFE URL POLYFILL - Fixes "TypeError: Failed to construct 'URL': Invalid URL" in components-BdJai906.js */
+  var NativeURL = window.URL;
+  function SafeURL(url, base) {
+    try {
+      return new NativeURL(url, base || window.location.href);
+    } catch(e) {
+      if (typeof url === 'string') {
+        try {
+          return new NativeURL(url, window.location.origin);
+        } catch(err) {
+          return new NativeURL(window.location.href);
+        }
+      }
+      return new NativeURL(window.location.href);
+    }
+  }
+  SafeURL.prototype = NativeURL.prototype;
+  SafeURL.createObjectURL = function() { return NativeURL.createObjectURL.apply(NativeURL, arguments); };
+  SafeURL.revokeObjectURL = function() { return NativeURL.revokeObjectURL.apply(NativeURL, arguments); };
+  window.URL = SafeURL;
+})();
+</script>
+
 <script>
 (function() {
   /* CLEAN TITLE & SKULL FAVICON LOCK (NON-MUTATING) */
