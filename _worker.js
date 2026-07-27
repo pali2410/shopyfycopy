@@ -8,32 +8,30 @@ export default {
     const isAsset = /\.(js|css|wasm|woff2|woff|ttf|otf|json|png|jpg|jpeg|gif|svg|hdr|glb|gltf|mp3|ico)$/i.test(decodedPath);
 
     if (isAsset) {
-      // Extract file basename
       const filename = decodedPath.substring(decodedPath.lastIndexOf('/') + 1);
       const safeFilename = filename.replace('(_locale).editions.winter2026', 'locale-editions-winter2026');
 
-      // Candidate URL strings (MUST be clean URL strings without passing original request object)
-      const candidateUrls = [
-        url.origin + pathname,
-        url.origin + '/' + filename,
-        url.origin + '/scripts/' + filename,
-        url.origin + '/styles/' + filename,
-        url.origin + '/images/' + filename,
-        url.origin + '/media/' + filename,
-        url.origin + '/3d_models/' + filename,
-        url.origin + '/' + safeFilename,
-        url.origin + '/scripts/' + safeFilename
+      // Candidate paths relative to root asset directory
+      const candidatePaths = [
+        pathname,
+        decodedPath,
+        '/' + filename,
+        '/scripts/' + filename,
+        '/styles/' + filename,
+        '/images/' + filename,
+        '/media/' + filename,
+        '/' + safeFilename,
+        '/scripts/' + safeFilename
       ];
 
-      for (const targetUrl of candidateUrls) {
+      for (const cp of candidatePaths) {
         try {
-          // Construct clean Request with targetUrl string
-          const response = await env.ASSETS.fetch(new Request(targetUrl));
+          // Pass URL object with origin + candidate path directly to env.ASSETS.fetch
+          const targetUrl = new URL(cp, url.origin);
+          const response = await env.ASSETS.fetch(targetUrl);
           
           if (response.status < 400) {
             const contentType = response.headers.get('Content-Type') || '';
-            
-            // Skip if Cloudflare returned HTML for script/style request
             if (contentType.includes('text/html') && !filename.endsWith('.html')) {
               continue;
             }
@@ -55,7 +53,7 @@ export default {
         } catch (e) {}
       }
 
-      // Safe fallbacks to prevent MIME type or script load errors
+      // Safe JS fallback if chunk is dynamic or optional
       if (filename.endsWith('.js')) {
         return new Response('/* Fallback script */\nexport default {};', {
           status: 200,
@@ -74,7 +72,7 @@ export default {
 
     // 2. Page route requests (/editions/winter2026, /, /editions/...) -> serve /index.html with status 200
     try {
-      const indexResp = await env.ASSETS.fetch(new Request(url.origin + '/index.html'));
+      const indexResp = await env.ASSETS.fetch(new URL('/index.html', url.origin));
       const htmlHeaders = new Headers(indexResp.headers);
       htmlHeaders.set('Content-Type', 'text/html; charset=utf-8');
       htmlHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
